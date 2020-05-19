@@ -33,7 +33,7 @@ int main( int argc , char **argv )
     /*------------------------------------------------------------------------*/
 
     /**
-     * argc recibe hasta 3 argumentos.
+     * argv recibe hasta 3 argumentos.
      *  1.- Nombre del programa.
      *  2.- IP donde se conectara.
      *  3.- Puerto de enlace
@@ -53,8 +53,7 @@ int main( int argc , char **argv )
     /*------------------------------------------------------------------------*/
     
     /**
-     * @descripcion
-     *  se abre socket para el cliente 
+     * @brief se abre socket para el cliente 
      */
     socketServer = abrirSocket( socketServer );
     if( socketServer == -1 )
@@ -66,16 +65,14 @@ int main( int argc , char **argv )
     /*------------------------------------------------------------------------*/
     
     /**
-     * @descripcion
-     *  se configura las variables del servidor
+     * @brief se configura las variables del servidor
      */
     server = configServer( server , PORT );
     
     /*------------------------------------------------------------------------*/
     
     /**
-     * @descripcion
-     *  verifica si los parametros del servidor son correctos
+     * @brief verifica si los parametros del servidor son correctos
      */
     if( inet_pton( AF_INET , "127.0.0.1" , &server.sin_addr ) <= 0 )
     {
@@ -93,16 +90,19 @@ int main( int argc , char **argv )
 
     /*------------------------------------------------------------------------*/
 
+    peticiones = sizeof( cliente ) ; 
+    socketCliente = accept( socketServer, (struct sockaddr *) &cliente, &peticiones ) ;
+    if( socketCliente < 0 )
+    { 
+        printf( "ERROR en accept" ) ;
+        exit( -1 ) ;
+    }
+
+    /*------------------------------------------------------------------------*/
+
     while( opcion != 0 )
     {
-        peticiones = sizeof( cliente ) ;
-        socketCliente = accept( socketServer, (struct sockaddr *) &cliente, &peticiones ) ;
-        if( socketCliente < 0 )
-        { 
-            printf( "ERROR en accept" ) ;
-            exit( -1 ) ;
-        }
-
+        printf( "Esperando solicitud del cliente.\n" );
         read( socketCliente , &opcion , sizeof(int) ) ;
         if( opcion == 0 )
         {
@@ -115,9 +115,9 @@ int main( int argc , char **argv )
 
             for( int i = 0 ; i < opcion ; i++ )
             {
-                read( socketCliente , buffer , sizeof(char) ) ;
+                read( socketCliente , buffer , 1024 ) ;
                 escribirFichero( buffer );
-            }
+            } escribirFichero( "\n" );
 
             printf( "Fichero traspasado exitosamente.\n" );
         }
@@ -133,7 +133,7 @@ int main( int argc , char **argv )
     close( socketCliente ) ;
     close( socketServer ) ;
     return 0 ;
-}
+} /* fin del main */
 
 /**
  * AF_INET = Address Format, Internet = IP Addresses
@@ -142,7 +142,9 @@ int main( int argc , char **argv )
  * domain: PF_INET => IPv4
  * type: SOCK_STREAM => conexion bidireccional confiable
  * protocol: 0 => dominio de comunicacion
- *
+ * 
+ * @brief abre un socket
+ * 
  * @param socketCliente
  * @return 
  */
@@ -152,6 +154,13 @@ int abrirSocket( int socketCliente )
     return socketCliente;
 } // fin abrirSocket
 
+/**
+ * @brief configuracion de la estructura del servidor
+ * 
+ * @param server 
+ * @param puerto 
+ * @return struct sockaddr_in 
+ */
 struct sockaddr_in configServer( struct sockaddr_in server , int puerto )
 {
     /* memset( &server , '0' , sizeof( server ) ); */
@@ -162,13 +171,18 @@ struct sockaddr_in configServer( struct sockaddr_in server , int puerto )
     return server;
 } /* fin configServer */
 
-void escribirFichero(char* linea )
+/**
+ * @brief ingresa una cadena de caracteres al fichero
+ * 
+ * @param linea 
+ */
+void escribirFichero( char* linea )
 {
     FILE *escribir = NULL;
     char *destino = "destino.txt" ;
     
     escribir = fopen( destino , "a" );
-    fprintf( escribir , " %s" , linea ) ;        
+    fprintf( escribir , "%s" , linea ) ;        
     
     fflush( escribir );
     fclose( escribir );

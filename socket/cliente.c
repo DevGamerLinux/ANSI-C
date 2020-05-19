@@ -39,7 +39,7 @@ int main( int argc , char **argv )
     /*------------------------------------------------------------------------*/
 
     /**
-     * argc recibe 3 argumentos.
+     * argv recibe 3 argumentos.
      *  1.- Nombre del programa.
      *  2.- IP donde se conectara.
      *  3.- Puerto de enlace
@@ -110,8 +110,9 @@ int main( int argc , char **argv )
         }
         else if( op == 1 )
         {
-            aux = contenidoFichero();
-            if( aux == 1 )
+            aux = contenidoFichero();            
+            
+            if( aux == 1 ) 
             {
                 printf( "Fichero vacio, no se enviara nada.\n" );
             }
@@ -122,7 +123,7 @@ int main( int argc , char **argv )
 
                 /* cantidad de lineas */
                 op = contarLineas() ;
-                write( socketCliente , &op , sizeof(int) ) ;
+                write( socketCliente , &op , sizeof(int) ) ;                
 
                 /* redimencionamos el vector a la cantidad de lineas */
                 vector = (int*)malloc( op * sizeof(int) ) ;
@@ -133,7 +134,7 @@ int main( int argc , char **argv )
                 for( int i = 0 ; i < op ; i++)
                 {
                     buscarCadena( aux , i , cadena );
-                    write( socketCliente , &cadena , sizeof(char) ) ;
+                    write( socketCliente , &cadena , 1024 ) ;
                     aux += vector[i];
                 }
 
@@ -155,9 +156,15 @@ int main( int argc , char **argv )
     return 0 ;
 }
 
+/**
+ * @brief menu de opciones.
+ * 
+ * @param op 
+ * @return int 
+ */
 int menu( int op )
 {
-    char *msj = "0.- Terminar conexion.\n1.-Trasmitir Fichero.\nop: ";
+    char *msj = "0.- Terminar conexion.\n1.- Trasmitir Fichero.\nop: ";
     printf( "%s" , msj );
     scanf( "%d" , &op );
     return op;
@@ -171,6 +178,8 @@ int menu( int op )
  * type: SOCK_STREAM => conexion bidireccional confiable
  * protocol: 0 => dominio de comunicacion
  *
+ * @brief abre un socket
+ * 
  * @param socketCliente
  * @return 
  */
@@ -180,6 +189,14 @@ int abrirSocket( int socketCliente )
     return socketCliente;
 } /* fin abrirSocket */
 
+/**
+ * @brief configuracion de la estructura del servidor
+ * 
+ * @param server 
+ * @param puerto 
+ * @param he 
+ * @return struct sockaddr_in 
+ */
 struct sockaddr_in configServer( struct sockaddr_in server , int puerto , struct hostent *he )
 {
     /* memset( &server , '0' , sizeof( server ) ); */
@@ -191,8 +208,7 @@ struct sockaddr_in configServer( struct sockaddr_in server , int puerto , struct
 } /* fin configServer */
 
 /**
- * @describe
- *  cuenta la cantidad de lineas del fichero
+ * @brief cuenta la cantidad de lineas del fichero
  * 
  * @return dimension
  */
@@ -217,37 +233,39 @@ int contarLineas()
 
 
 /**
- * @describe
- *  cuenta la dimension de cada linea del fichero
-*/
+ * @brief cuenta la dimension de cada linea del fichero
+ * 
+ * @param vector 
+ */
 void largoCadena( int vector[] )
 {
     FILE *leer = NULL;
     char *origen = "origen.txt" ;
     char caracteres[1024] ;
-    int dimension = 0 , 
-        i = 0;
+    int i = 0;
 
     leer = fopen( origen , "r" );
 
     while (feof(leer) == 0)
  	{
  	    fgets( caracteres , 100 , leer ) ;
-        printf( "laro de la linea: %ld.\n" , strlen( caracteres ) );
         vector[i] =  (int) strlen( caracteres ) ;
         i++ ;
- 	}//printf("\n");
+ 	}
 
     fclose(leer);
 } /* fin largoCadena */
 
 /**
- * @describe
- *  devuelve la linea leida del fichero
+ * @brief devuelve la linea capturada del fichero
  * 
  * SEEK_SET -> Posición respecto al inicio del archivo
  * SEEK_CUR -> Incremento relativo a la posición actual
  * SEEK_END -> Posición respecto al final del archivo
+ * 
+ * @param caracteres
+ * @param linea
+ * @param cadena
  * 
  * @return cadena
 */
@@ -274,40 +292,29 @@ void buscarCadena( int caracteres , int linea , char* cadena )
 } /* fin buscarCadena */
 
 /**
- * @describe
- *  comprueba si el contenido del fichero esta vacio,
- *  de encontrar vacio el fichero retornara -1, de lo
+ * @brief comprueba si el contenido del fichero esta vacio,
+ *  de encontrar vacio el fichero retornara 1, de lo
  *  contrario, retorna 0.
  * 
- * @return int
-*/
+ * @return int 
+ */
 int contenidoFichero()
 {
     FILE *leer = NULL;
     char *origen = "origen.txt" ;
 
-    int valor[ 256 ] , 
-        n_valores = 0 , 
-        total = 0 ;
-
     leer = fopen( origen , "r" ) ;
 
-    do 
+    fseek( leer , 0 , SEEK_END );
+    if( ftell( leer ) == 0 )
     {
-        n_valores = fscanf( leer , "%d", &valor[ total ] ) ;
-        if( n_valores == 1 )
-        {
-            total++ ;        
-        }
-    } while( n_valores != EOF ) ;
-
-    fclose(leer);
-    
-    if( total == 0 )
+        fclose( leer );
+        return 1 ;  /* fichero vacio */
+    }
+    else 
     {
-        return 1 ;
+        fclose( leer );
+        return 0 ; /* fichero no vacio */
     }
 
-    return 0;
-    
 } /* fin contenidoFichero */
